@@ -1,0 +1,1488 @@
+<!doctype html>
+<html lang="th">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>แปลงโพยลง Excel</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bai+Jamjuree:wght@500;600;700&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+Thai:wght@400;500;600&display=swap">
+<style>
+/* Layout: งวด+ลูกค้า+โพยซ้าย · ผลลัพธ์แบบตาราง Excel คอลัมน์ A–H ขวา · รายชื่อลูกค้าและกติกาด้านล่าง; มือถือเรียงเป็นแถวเดียว */
+/* ธีมเดียวโทนมืด: ถ่านเขียว + เขียวมิ้นต์ ตามภาพอ้างอิงของผู้ใช้ */
+:root {
+  --bg: #181C1E;
+  --surface: #1E2422;
+  --ink: #EEF3F0;
+  --muted: #98A59F;
+  --line: #303A36;
+  --card-line: #2A4537;
+  --accent: #5BC98B;
+  --accent-hi: #74D69F;
+  --accent-ink: #0B1A11;
+  --head: #1D3328;
+  --head-ink: #C2ECD4;
+  --warn-bg: #3A2D0F;
+  --warn-ink: #F5D18A;
+  --warn-line: #9A7426;
+  --note-bg: #152536;
+  --note-ink: #A8C7EC;
+  --danger: #F08B83;
+  --danger-bg: #3E1B18;
+  --danger-ink: #F7BDB6;
+  --danger-line: #93413A;
+  --shadow: rgba(0, 0, 0, 0.55);
+  --font-display: "Bai Jamjuree", "IBM Plex Sans Thai", "Noto Sans Thai", sans-serif;
+  --font-body: "IBM Plex Sans Thai", "Noto Sans Thai", "Leelawadee UI", Tahoma, sans-serif;
+  --font-num: "IBM Plex Mono", ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body { background: var(--bg); color: var(--ink); font-family: var(--font-body); font-size: 15px; line-height: 1.6; padding-inline: 16px; padding-block: 20px 40px; }
+.wrap { max-width: 1180px; margin: 0 auto; display: flex; flex-direction: column; gap: 20px; }
+header.top { display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 8px 16px; }
+h1 { font-family: var(--font-display); font-weight: 700; font-size: 1.9rem; line-height: 1.2; margin: 0; text-wrap: balance; }
+h1 .hl { color: var(--accent); }
+.dash { position: relative; display: block; width: 30px; height: 3px; margin-top: 10px; border-radius: 2px; background: var(--accent); }
+.dash::after { content: ""; position: absolute; left: 36px; top: 0; width: 3px; height: 3px; border-radius: 50%; background: var(--accent); box-shadow: 7px 0 0 var(--accent), 14px 0 0 var(--accent); }
+.sub { margin: 10px 0 0; color: var(--muted); }
+.ver { font-size: 0.8rem; color: var(--muted); border: 1px solid var(--line); border-radius: 999px; padding: 2px 10px; white-space: nowrap; }
+.grid { display: grid; grid-template-columns: minmax(0, 5fr) minmax(0, 7fr); gap: 20px; align-items: start; }
+@media (max-width: 860px) { .grid { grid-template-columns: minmax(0, 1fr); } }
+.pane { background: var(--surface); border: 1px solid var(--card-line); border-radius: 10px; padding: 16px; display: flex; flex-direction: column; gap: 12px; min-width: 0; }
+.pane-head { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px; }
+h2 { font-family: var(--font-display); font-weight: 600; font-size: 1.1rem; margin: 0; display: flex; align-items: center; gap: 8px; }
+.chip { font-family: var(--font-body); font-weight: 500; font-size: 0.75rem; letter-spacing: 0.02em; background: var(--head); color: var(--head-ink); border-radius: 999px; padding: 1px 9px; }
+.tools { display: flex; gap: 8px; flex-wrap: wrap; }
+button { font: inherit; font-size: 0.9rem; cursor: pointer; border-radius: 8px; border: 1px solid var(--line); background: var(--surface); color: var(--ink); padding: 6px 12px; }
+button:hover { border-color: var(--muted); }
+button:focus-visible, textarea:focus-visible, input:focus-visible, summary:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+button.primary { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); font-weight: 600; padding: 9px 16px; font-size: 0.95rem; }
+button.primary:hover:not(:disabled) { background: var(--accent-hi); border-color: var(--accent-hi); }
+button.primary:disabled { opacity: 0.45; cursor: not-allowed; }
+.fields { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 12px; }
+@media (max-width: 520px) { .fields { grid-template-columns: minmax(0, 1fr); } }
+.field { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+.field label { font-size: 0.9rem; font-weight: 500; color: var(--muted); display: flex; gap: 6px; align-items: baseline; }
+.field label .col { font-family: var(--font-num); font-size: 0.75rem; font-weight: 500; color: var(--accent); background: transparent; border: 1px solid var(--card-line); border-radius: 4px; padding: 0 5px; }
+input.text { width: 100%; font: inherit; font-size: 1rem; color: var(--ink); background: var(--bg); border: 1px solid var(--line); border-radius: 8px; padding: 8px 10px; min-width: 0; }
+input.text.mono { font-family: var(--font-num); letter-spacing: 0.02em; }
+input.text.big { font-size: 1.35rem; font-weight: 600; padding: 9px 12px; line-height: 1.35; }
+input.text[aria-invalid="true"] { border-color: var(--danger); }
+.draws { display: flex; flex-wrap: wrap; gap: 6px; }
+.draws button { font-size: 0.8rem; padding: 1px 9px; border-radius: 999px; white-space: nowrap; }
+.draws button[aria-pressed="true"] { background: var(--head); color: var(--head-ink); border-color: var(--accent); }
+.err { margin: 0; font-size: 0.82rem; color: var(--danger); min-height: 0; }
+.err:empty { display: none; }
+.cust-state { margin: 0; font-size: 0.82rem; color: var(--muted); display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
+.cust-state:empty { display: none; }
+.cust-state button { padding: 1px 8px; font-size: 0.8rem; }
+.combo { position: relative; }
+.listbox { position: absolute; top: calc(100% + 4px); left: 0; right: 0; z-index: 20; margin: 0; padding: 4px; list-style: none; background: var(--surface); border: 1px solid var(--line); border-radius: 8px; box-shadow: 0 8px 24px var(--shadow); max-height: 280px; overflow-y: auto; }
+.listbox li { padding: 6px 10px; border-radius: 6px; cursor: pointer; overflow-wrap: anywhere; }
+.listbox li[aria-selected="true"] { background: var(--head); color: var(--head-ink); }
+.listbox li.add { color: var(--accent); font-weight: 500; }
+.listbox li.info { color: var(--muted); cursor: default; font-size: 0.88rem; }
+textarea#slip { width: 100%; min-height: 360px; resize: vertical; font-family: var(--font-num); font-size: 15px; line-height: 1.7; color: var(--ink); background: var(--bg); border: 1px solid var(--line); border-radius: 8px; padding: 12px; }
+@media (max-width: 860px) { textarea#slip { min-height: 34vh; } }
+.hint { margin: 0; font-size: 0.85rem; color: var(--muted); }
+.tip { display: flex; gap: 8px; align-items: flex-start; margin: 0; padding: 8px 12px; border-radius: 8px; background: var(--head); color: var(--head-ink); border: 1px solid var(--accent); font-size: 0.9rem; font-weight: 500; line-height: 1.5; }
+.tip .ico { width: 18px; height: 18px; flex: none; margin-top: 2px; }
+.tip ul { margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.tip code { font-family: var(--font-num); font-size: 1em; font-weight: 600; color: var(--ink); background: var(--surface); border: 1px solid var(--accent); border-radius: 4px; padding: 0 6px; }
+.hint code, .rules code { font-family: var(--font-num); font-size: 0.9em; background: var(--bg); border: 1px solid var(--line); border-radius: 4px; padding: 0 5px; }
+.summary { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 0; border: 1px solid var(--line); border-radius: 8px; overflow: hidden; margin: 0; }
+.summary div { padding: 8px 10px; border-left: 1px solid var(--line); min-width: 0; }
+.summary div:first-child { border-left: 0; }
+.summary dt { font-size: 0.78rem; color: var(--muted); letter-spacing: 0.02em; }
+.summary dd { margin: 0; font-family: var(--font-num); font-weight: 500; font-size: 1.15rem; font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
+@media (max-width: 480px) { .summary { grid-template-columns: repeat(3, minmax(0, 1fr)); } .summary div:nth-child(4) { border-left: 0; } .summary div:nth-child(n+4) { border-top: 1px solid var(--line); } }
+.ab { display: flex; flex-wrap: wrap; gap: 6px 24px; font-size: 0.92rem; color: var(--muted); margin: 0; padding: 8px 12px; background: var(--bg); border-radius: 8px; }
+.ab span { display: inline-flex; gap: 8px; align-items: baseline; min-width: 0; }
+.ab b { font-weight: 600; font-size: 1.3rem; line-height: 1.3; color: var(--ink); overflow-wrap: anywhere; }
+.ab b#ab-date { font-family: var(--font-num); }
+.ab b.missing { color: var(--danger); font-weight: 500; }
+.ab .col { font-family: var(--font-num); font-size: 0.75rem; font-weight: 500; color: var(--accent); background: transparent; border: 1px solid var(--card-line); border-radius: 4px; padding: 0 5px; }
+.actions { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; }
+#status { font-size: 0.9rem; color: var(--accent); min-height: 1.4em; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+#status.bad { color: var(--danger); }
+#status button { padding: 2px 10px; font-size: 0.85rem; }
+textarea#tsv { width: 100%; min-height: 120px; font-family: var(--font-num); font-size: 13px; background: var(--bg); color: var(--ink); border: 1px solid var(--accent); border-radius: 8px; padding: 8px; }
+.box { border-radius: 8px; padding: 10px 12px; font-size: 0.9rem; display: flex; flex-direction: column; gap: 6px; }
+.box h3 { margin: 0; font-size: 0.92rem; font-weight: 600; display: flex; align-items: center; gap: 8px; }
+.box .ico { width: 20px; height: 20px; flex: none; }
+.box .body { display: block; padding-left: 28px; }
+.box ul { margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 4px; }
+.box li { display: flex; flex-wrap: wrap; gap: 2px 8px; align-items: baseline; }
+.box .ln { font-size: 0.78rem; opacity: 0.85; white-space: nowrap; }
+.box .src { font-family: var(--font-num); font-weight: 600; overflow-wrap: anywhere; }
+.warn { background: var(--warn-bg); color: var(--warn-ink); border: 1.5px solid var(--warn-line); }
+.bad-box { background: var(--danger-bg); color: var(--danger-ink); border: 1.5px solid var(--danger-line); }
+.bad-box h3 { color: var(--danger); }
+.note { background: var(--note-bg); color: var(--note-ink); border: 1.5px solid transparent; }
+.table-wrap { overflow-x: auto; border: 1px solid var(--line); border-radius: 8px; max-height: 560px; overflow-y: auto; }
+table { width: 100%; border-collapse: collapse; font-variant-numeric: tabular-nums; }
+thead th { position: sticky; background: var(--head); color: var(--head-ink); font-weight: 600; text-align: right; padding: 4px 10px; border-bottom: 1px solid var(--line); white-space: nowrap; z-index: 1; }
+thead tr.letters th { top: 0; font-family: var(--font-num); font-weight: 400; font-size: 0.75rem; padding-block: 2px; opacity: 0.9; }
+thead tr.names th { top: 22px; }
+th.l, td.l { text-align: left; }
+td { padding: 3px 10px; border-bottom: 1px solid var(--line); text-align: right; font-family: var(--font-num); white-space: nowrap; }
+td.num { font-weight: 500; }
+td.meta { font-size: 0.8rem; color: var(--muted); }
+td.meta.cust { font-family: var(--font-body); max-width: 9rem; overflow: hidden; text-overflow: ellipsis; }
+td.meta.missing { color: var(--danger); }
+td, thead th { padding-inline: 8px; }
+td.ref, th.ref { color: var(--muted); font-size: 0.78rem; text-align: right; width: 1%; }
+tbody tr:hover td { background: var(--bg); }
+tfoot td { font-weight: 600; background: var(--surface); position: sticky; bottom: 0; border-top: 1px solid var(--muted); border-bottom: 0; }
+.empty td { text-align: center; color: var(--muted); font-family: var(--font-body); padding: 32px 10px; white-space: normal; }
+details.fold { background: var(--surface); border: 1px solid var(--card-line); border-radius: 10px; padding: 0 16px; }
+details.fold summary { cursor: pointer; padding: 14px 0; font-family: var(--font-display); font-weight: 600; font-size: 1.05rem; }
+.fold-body { display: flex; flex-direction: column; gap: 12px; padding-block: 4px 18px; }
+.add-row { display: flex; flex-wrap: wrap; gap: 8px; }
+.add-row input { flex: 1 1 220px; }
+.names-list { display: flex; flex-wrap: wrap; gap: 6px; margin: 0; padding: 0; list-style: none; }
+.names-list li { display: inline-flex; align-items: center; border: 1px solid var(--line); border-radius: 999px; background: var(--bg); padding-left: 10px; font-size: 0.9rem; max-width: 100%; }
+.names-list li .nm { overflow-wrap: anywhere; }
+.names-list li button { border: 0; background: transparent; padding: 2px 9px; border-radius: 999px; color: var(--muted); font-size: 0.85rem; }
+.names-list li button:hover { color: var(--danger); }
+.names-list li.confirm { border-color: var(--danger); background: var(--danger-bg); }
+.names-list li.confirm button { color: var(--danger); font-weight: 600; }
+.names-empty { margin: 0; color: var(--muted); font-size: 0.9rem; }
+details.io { border: 1px dashed var(--line); border-radius: 8px; padding: 0 12px; }
+details.io summary { cursor: pointer; padding: 8px 0; font-weight: 500; color: var(--muted); }
+.io-body { display: flex; flex-direction: column; gap: 8px; padding-bottom: 12px; }
+textarea#import-text { width: 100%; font: inherit; color: var(--ink); background: var(--bg); border: 1px solid var(--line); border-radius: 8px; padding: 8px 10px; resize: vertical; }
+#io-msg.bad { color: var(--danger); }
+.rules-body { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 320px), 1fr)); gap: 16px 28px; padding-block: 4px 18px; }
+.rules h4 { margin: 0 0 6px; font-size: 0.95rem; color: var(--accent); font-weight: 600; }
+.rules dl { margin: 0; display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 6px 12px; font-size: 0.9rem; }
+.rules dt { white-space: nowrap; }
+.rules dd { margin: 0; color: var(--muted); min-width: 0; }
+footer { color: var(--muted); font-size: 0.85rem; }
+.photo { display: flex; gap: 12px; align-items: flex-start; border: 1px solid var(--line); border-radius: 8px; padding: 10px; background: var(--bg); }
+.photo.big { flex-direction: column; }
+.thumb { padding: 0; flex: 0 0 96px; width: 96px; height: 96px; overflow: hidden; background: var(--surface); }
+.thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.thumb[hidden] { display: none; }
+.photo.big .thumb { flex-basis: auto; width: 100%; height: auto; }
+.photo.big .thumb img { height: auto; max-height: 75vh; object-fit: contain; }
+.photo-info { flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; gap: 6px; }
+.photo-status { margin: 0; font-size: 0.9rem; font-weight: 500; color: var(--accent); }
+.photo-status.bad { color: var(--danger); }
+.photo-list { margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 2px; font-size: 0.85rem; color: var(--muted); }
+.photo-list li { overflow-wrap: anywhere; }
+.photo-list b { font-weight: 600; color: var(--warn-ink); }
+.photo-actions { display: flex; flex-wrap: wrap; gap: 6px; }
+.photo-actions button { padding: 3px 10px; font-size: 0.85rem; }
+textarea#slip.drop { border-color: var(--accent); border-style: dashed; }
+@media (prefers-reduced-motion: no-preference) { button { transition: border-color .15s, opacity .15s, background-color .15s; } }
+</style>
+<style>body{margin:0}[hidden]{display:none!important}</style>
+</head>
+<body>
+
+<div class="wrap">
+  <header class="top">
+    <div>
+      <h1>แปลงโพยลง <span class="hl">Excel</span></h1>
+      <span class="dash" aria-hidden="true"></span>
+      <p class="sub">เลือกงวดและลูกค้า วางข้อความโพย แล้วคัดลอกไปวางที่ช่อง A</p>
+    </div>
+    <span class="ver" id="ver">กติกา</span>
+  </header>
+
+  <div class="grid">
+    <section class="pane" aria-labelledby="in-title">
+      <div class="fields">
+        <div class="field">
+          <label for="draw-date"><span class="col">A</span>งวดวันที่</label>
+          <input class="text mono big" id="draw-date" type="text" inputmode="numeric" autocomplete="off" placeholder="DD/MM/YYYY" maxlength="10" aria-describedby="date-err">
+          <div class="draws" id="draws" role="group" aria-label="งวดใกล้วันนี้"></div>
+          <p class="err" id="date-err" aria-live="polite"></p>
+        </div>
+        <div class="field">
+          <label for="customer"><span class="col">B</span>ลูกค้า</label>
+          <div class="combo">
+            <input class="text big" id="customer" type="text" autocomplete="off" spellcheck="false" placeholder="พิมพ์หรือเลือกชื่อ" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="cust-list" aria-describedby="cust-err">
+            <ul class="listbox" id="cust-list" role="listbox" aria-label="รายชื่อลูกค้า" hidden></ul>
+          </div>
+          <p class="cust-state" id="cust-state" aria-live="polite"></p>
+          <p class="err" id="cust-err" aria-live="polite"></p>
+        </div>
+      </div>
+      <div class="pane-head">
+        <h2 id="in-title">ข้อความโพย <span class="chip" id="sample-chip" hidden>ตัวอย่าง</span></h2>
+        <div class="tools">
+          <button type="button" id="btn-photo">อ่านรูปโพย</button>
+          <input type="file" id="photo-input" accept="image/*" hidden>
+          <button type="button" id="btn-sample">ใส่ตัวอย่าง</button>
+          <button type="button" id="btn-clear">ล้าง</button>
+        </div>
+      </div>
+      <textarea id="slip" spellcheck="false" autocomplete="off" aria-describedby="in-hint" placeholder="วางข้อความโพยที่นี่ เช่น&#10;บน&#10;50=100x100&#10;394=200x5x50"></textarea>
+      <div class="photo" id="photo-panel" hidden>
+        <button type="button" class="thumb" id="photo-thumb" aria-label="ขยายหรือย่อรูป"><img id="photo-img" alt="รูปโพยที่ส่งให้อ่าน"></button>
+        <div class="photo-info">
+          <p class="photo-status" id="photo-status" aria-live="polite"></p>
+          <ul class="photo-list" id="photo-list"></ul>
+          <div class="photo-actions">
+            <button type="button" id="photo-stop" hidden>หยุด</button>
+            <button type="button" id="photo-retry" hidden>ลองอีกครั้ง</button>
+            <button type="button" id="photo-undo" hidden>เอาข้อความเดิมกลับมา</button>
+            <button type="button" id="photo-prompt" hidden>คัดลอกคำสั่งไว้ใช้ในแชท Claude</button>
+            <button type="button" id="photo-close" hidden>ปิด</button>
+          </div>
+        </div>
+      </div>
+      <div class="tip" id="in-hint">
+        <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 11v5.5"/><path d="M12 7.6v.1"/></svg>
+        <ul>
+          <li>พิมพ์หรือวางข้อความโพยได้เลย แปลงให้อัตโนมัติ</li>
+          <li>ถ้าวางหลายชุด ให้คั่นแต่ละชุดด้วย <code>---</code></li>
+          <li id="photo-hint">มีรูปโพย กด "อ่านรูปโพย" หรือวางรูปด้วย Ctrl+V</li>
+        </ul>
+      </div>
+    </section>
+
+    <section class="pane" aria-labelledby="out-title">
+      <div class="pane-head">
+        <h2 id="out-title">ผลลัพธ์</h2>
+      </div>
+      <dl class="summary" aria-label="ยอดรวม">
+        <div><dt>แถว</dt><dd id="t-rows">0</dd></div>
+        <div><dt>บน</dt><dd id="t-bon">0</dd></div>
+        <div><dt>ล่าง</dt><dd id="t-lang">0</dd></div>
+        <div><dt>โต๊ด</dt><dd id="t-tod">0</dd></div>
+        <div><dt>ตรง</dt><dd id="t-trong">0</dd></div>
+      </dl>
+      <p class="ab" aria-label="ค่าที่ใส่ทุกแถว">
+        <span><span class="col">A</span>งวด <b id="ab-date"></b></span>
+        <span><span class="col">B</span>ลูกค้า <b id="ab-cust"></b></span>
+      </p>
+      <div class="actions">
+        <button type="button" class="primary" id="btn-copy" disabled>คัดลอกไปวาง Excel</button>
+        <div id="status" aria-live="polite"></div>
+      </div>
+      <textarea id="tsv" readonly hidden aria-label="ข้อความสำหรับคัดลอก"></textarea>
+      <div class="box bad-box" id="warn-box" role="alert" hidden>
+        <h3><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3.5 2.5 20h19L12 3.5z"/><path d="M12 10v4.5"/><path d="M12 17.6v.1"/></svg><span id="warn-title"></span></h3>
+        <ul class="body" id="warn-list"></ul>
+      </div>
+      <div class="box warn" id="zero-box" hidden>
+        <h3><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3.5 2.5 20h19L12 3.5z"/><path d="M12 10v4.5"/><path d="M12 17.6v.1"/></svg><span>มีเลขที่ขึ้นต้นด้วย 0</span></h3>
+        <span class="body">ตั้งคอลัมน์ C เป็น Text ก่อนวาง ไม่งั้น Excel จะตัดเลข 0 ข้างหน้าทิ้ง</span>
+      </div>
+      <div class="box note" id="note-box" hidden>
+        <h3><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 11v5.5"/><path d="M12 7.6v.1"/></svg><span id="note-title"></span></h3>
+        <ul class="body" id="note-list"></ul>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr class="letters"><th class="ref"></th><th class="l">A</th><th class="l">B</th><th class="l">C</th><th>D</th><th>E</th><th>F</th><th>G</th><th class="l">H</th></tr>
+            <tr class="names"><th class="ref" title="บรรทัดในข้อความโพย">บรรทัด</th><th class="l">งวดวันที่</th><th class="l">ลูกค้า</th><th class="l">เลข</th><th>บน</th><th>ล่าง</th><th>โต๊ด</th><th>ตรง</th><th class="l">วันที่ใส่ข้อมูล</th></tr>
+          </thead>
+          <tbody id="rows"></tbody>
+          <tfoot id="foot"></tfoot>
+        </table>
+      </div>
+    </section>
+  </div>
+
+  <details class="fold" id="cust-panel">
+    <summary>รายชื่อลูกค้า <span id="cust-count"></span></summary>
+    <div class="fold-body">
+      <form class="add-row" id="add-form" novalidate>
+        <input class="text" id="new-name" type="text" autocomplete="off" spellcheck="false" placeholder="ชื่อลูกค้าใหม่" aria-label="ชื่อลูกค้าใหม่" aria-describedby="add-err">
+        <button type="submit" class="primary">เพิ่มลูกค้า</button>
+      </form>
+      <p class="err" id="add-err" aria-live="polite"></p>
+      <p class="hint" id="store-hint"></p>
+      <details class="io" id="io-panel">
+        <summary>นำเข้า / ส่งออกรายชื่อ</summary>
+        <div class="io-body">
+          <textarea id="import-text" rows="5" spellcheck="false" aria-label="รายชื่อที่จะนำเข้า" placeholder="วางรายชื่อลูกค้า บรรทัดละหนึ่งชื่อ"></textarea>
+          <div class="add-row">
+            <button type="button" class="primary" id="btn-import">นำเข้ารายชื่อ</button>
+            <button type="button" id="btn-export">คัดลอกรายชื่อทั้งหมด</button>
+          </div>
+          <p class="hint" id="io-msg" aria-live="polite"></p>
+        </div>
+      </details>
+      <ul class="names-list" id="names-list"></ul>
+      <p class="names-empty" id="names-empty" hidden></p>
+    </div>
+  </details>
+
+  <details class="fold rules" id="rules">
+    <summary>กติกาที่รองรับ</summary>
+    <div class="rules-body">
+      <div>
+        <h4>หัวข้อ</h4>
+        <dl>
+          <dt><code>บน</code> <code>บ</code></dt><dd>เลข 2 หลักข้างล่างลงคอลัมน์บน</dd>
+          <dt><code>ล่าง</code> <code>ล</code></dt><dd>เลข 2 หลักข้างล่างลงคอลัมน์ล่าง</dd>
+          <dt><code>บล</code> <code>บน ล่าง</code></dt><dd>ลงทั้งบนและล่าง ยอดเดียวกัน</dd>
+          <dt><code>---</code></dt><dd>เริ่มชุดใหม่ ล้างหัวข้อเดิม</dd>
+          <dt>ไม่มีหัวข้อ</dt><dd>เลข 2 หลักลงบน และแจ้งให้ตรวจ</dd>
+        </dl>
+      </div>
+      <div>
+        <h4>เลข 2 หลัก</h4>
+        <dl>
+          <dt><code>66=200</code></dt><dd>66 ได้ 200 แถวเดียว</dd>
+          <dt><code>32 -20</code></dt><dd>32 ได้ 20 แถวเดียว</dd>
+          <dt><code>50=100x100</code></dt><dd>50 และ 05 ได้ตัวละ 100</dd>
+          <dt><code>25*30</code></dt><dd>25 และ 52 ได้ตัวละ 30</dd>
+          <dt><code>93</code> <code>39</code> <code>=15</code></dt><dd>เลขหลายบรรทัดตามด้วย =ยอด ทุกตัวได้ 15</dd>
+        </dl>
+      </div>
+      <div>
+        <h4>เลข 3 หลัก</h4>
+        <dl>
+          <dt><code>893=20</code></dt><dd>ตรง 20 แถวเดียว ไม่กลับ</dd>
+          <dt><code>739 ตรง 10 โต๊ด 20</code></dt><dd>ลงตามที่ระบุ</dd>
+          <dt><code>829=300x50</code></dt><dd>ตรง 300 โต๊ด 50</dd>
+          <dt><code>464=100x3</code></dt><dd>กลับครบ 3 ตัว ตรงตัวละ 100</dd>
+          <dt><code>563=20x6</code> <code>508*6=20</code></dt><dd>กลับครบ 6 ตัว ตรงตัวละ 20</dd>
+          <dt><code>394=200x5x50</code></dt><dd>394 ตรง 200 อีก 5 ตัวตรงตัวละ 50</dd>
+          <dt><code>700=300x2x100</code></dt><dd>700 ตรง 300 อีก 2 ตัวตรงตัวละ 100</dd>
+        </dl>
+      </div>
+      <div>
+        <h4>อ่านให้อัตโนมัติ</h4>
+        <dl>
+          <dt><code>x</code> <code>×</code> <code>*</code></dt><dd>ใช้แทนกันได้</dd>
+          <dt><code>๕๐</code></dt><dd>เลขไทยแปลงเป็นเลขอารบิก</dd>
+          <dt><code>1,000</code> <code>บาท</code></dt><dd>ตัดคอมมาและคำว่าบาทออก</dd>
+          <dt>เลขไม่ซ้ำแต่เขียน x3</dt><dd>กลับครบ 6 ตัว และแจ้งให้ตรวจ</dd>
+          <dt>บรรทัดที่ไม่ตรงกติกา</dt><dd>ไม่ใส่ในผลลัพธ์ และแจ้งเตือนพร้อมเลขบรรทัด</dd>
+        </dl>
+      </div>
+    </div>
+  </details>
+
+  <footer>เจอรูปแบบที่ยังไม่รองรับ ส่งตัวอย่างพร้อมความหมายให้ Claude เพื่อเพิ่มกติกาในเวอร์ชันถัดไป</footer>
+</div>
+
+<script>
+window.SLIP_CONFIG = {"mode":"site","customers":[]};
+</script>
+<script>
+(function (root) {
+  var RULES_VERSION = '1.0 · 5 ต.ค. 2026';
+
+  var THAI_DIGITS = '๐๑๒๓๔๕๖๗๘๙';
+  var HEADER_RE = /^(บน\s*[-\/+&,]?\s*ล่?าง|บ\s*[-\/+&,]?\s*ล|บน|ล่?าง|บ|ล)(?:\s*[:：])?(?=\s|$|\d)/;
+  var KW = '(ตรง|โต๊?ด|โต้ด|บน|ล่?าง|บ|ล)';
+  var KW_LINE = new RegExp('^(\\d{2,3})((?:\\s*' + KW + '\\s*=?\\s*\\d[\\d,]*)+)$');
+  var KW_PAIR = new RegExp(KW + '\\s*=?\\s*(\\d[\\d,]*)', 'g');
+  var NUM_LIST = /^\d{2,3}(?:[\s,\/]+\d{2,3})*$/;
+  var SEPARATOR = /^[-=_—–~*.]{3,}$/;
+
+  function normalize(line) {
+    var s = line;
+    s = s.replace(/[๐-๙]/g, function (d) { return String(THAI_DIGITS.indexOf(d)); });
+    s = s.replace(/[×xX✕✖＊]/g, '*');
+    s = s.replace(/＝/g, '=');
+    s = s.replace(/บาท/g, '');
+    s = s.replace(/[\u200b\u00a0]/g, ' ');
+    s = s.replace(/\s+/g, ' ').trim();
+    s = s.replace(/^[•·▪\-–—]\s+(?=\d)/, '');
+    s = s.replace(/(\d)\s*[-–—]\s*(\d)/g, '$1=$2');
+    s = s.replace(/\s*=\s*/g, '=').replace(/\s*\*\s*/g, '*');
+    return s;
+  }
+
+  function toAmount(str) {
+    return Number(String(str).replace(/,/g, ''));
+  }
+
+  function permutations(n) {
+    var out = {};
+    var d = n.split('');
+    var idx = [[0, 1, 2], [0, 2, 1], [1, 0, 2], [1, 2, 0], [2, 0, 1], [2, 1, 0]];
+    idx.forEach(function (p) { out[d[p[0]] + d[p[1]] + d[p[2]]] = true; });
+    var others = Object.keys(out).filter(function (x) { return x !== n; }).sort();
+    return [n].concat(others);
+  }
+
+  function parse(text) {
+    var lines = String(text || '').split(/\r?\n/);
+    var rows = [];
+    var warnings = [];
+    var notes = [];
+    var header = null;
+    var pending = [];
+    var noHeaderNoted = false;
+
+    function warn(ctx, reason) {
+      warnings.push({ lineNo: ctx.lineNo, text: ctx.text, reason: reason });
+    }
+    function note(ctx, reason) {
+      notes.push({ lineNo: ctx.lineNo, text: ctx.text, reason: reason });
+    }
+    function flushPending() {
+      if (!pending.length) return;
+      warnings.push({
+        lineNo: pending[0].lineNo,
+        text: pending.map(function (p) { return p.num; }).join(' '),
+        reason: 'มีเลขแต่ไม่มียอด'
+      });
+      pending = [];
+    }
+    function pushRow(r, ctx) {
+      rows.push({
+        num: r.num,
+        bon: r.bon == null ? null : r.bon,
+        lang: r.lang == null ? null : r.lang,
+        tod: r.tod == null ? null : r.tod,
+        trong: r.trong == null ? null : r.trong,
+        lineNo: ctx.lineNo
+      });
+    }
+
+    function applyTwoDigit(n, a, ctx) {
+      var list;
+      if (a.length === 1) {
+        list = [n];
+      } else if (a.length === 2 && a[0] === a[1]) {
+        var r = n.charAt(1) + n.charAt(0);
+        list = r === n ? [n] : [n, r];
+      } else if (a.length === 2) {
+        return warn(ctx, 'เลข 2 หลัก ยอดเลขตรงกับเลขกลับไม่เท่ากัน ยังไม่มีกติกานี้');
+      } else {
+        return warn(ctx, 'เลข 2 หลัก มียอด 3 ตัว ยังไม่มีกติกานี้');
+      }
+      var h = header || 'top';
+      if (!header && !noHeaderNoted) {
+        noHeaderNoted = true;
+        note(ctx, 'ไม่มีหัวข้อ บน/ล่าง ก่อนเลข 2 หลัก จึงลงเป็นบน');
+      }
+      var amt = a[0];
+      list.forEach(function (num) {
+        pushRow({
+          num: num,
+          bon: h !== 'bottom' ? amt : null,
+          lang: h !== 'top' ? amt : null
+        }, ctx);
+      });
+    }
+
+    function applyThreeDigit(n, a, ctx) {
+      var perms = permutations(n);
+      if (a.length === 1) {
+        return pushRow({ num: n, trong: a[0] }, ctx);
+      }
+      if (a.length === 2) {
+        var A = a[0], B = a[1];
+        if (B === 3 || B === 6) {
+          if (perms.length === 1) note(ctx, 'เลขตองกลับไม่ได้ ใส่แถวเดียว');
+          else if (B === 3 && perms.length === 6) note(ctx, 'เลขไม่มีตัวซ้ำแต่เขียน ×3 ใส่ครบ 6 ตัวให้แล้ว ช่วยเช็ก');
+          else if (B === 6 && perms.length === 3) note(ctx, 'เลขมีตัวซ้ำ กลับได้แค่ 3 ตัว');
+          perms.forEach(function (p) { pushRow({ num: p, trong: A }, ctx); });
+          return;
+        }
+        if (B === 2 || B === 5) {
+          return warn(ctx, 'เขียน ×' + B + ' แต่ไม่มียอดของเลขกลับ (ควรเป็น ยอด×' + B + '×ยอด)');
+        }
+        return pushRow({ num: n, trong: A, tod: B }, ctx);
+      }
+      var A3 = a[0], K = a[1], B3 = a[2];
+      var expected = K === 5 ? 6 : (K === 2 ? 3 : null);
+      if (!expected) return warn(ctx, 'ยังไม่มีกติกา ยอด×' + K + '×ยอด');
+      if (perms.length !== expected) {
+        return warn(ctx, 'เขียน ×' + K + ' แต่เลขนี้กลับได้อีก ' + (perms.length - 1) + ' ตัว');
+      }
+      perms.forEach(function (p, i) { pushRow({ num: p, trong: i === 0 ? A3 : B3 }, ctx); });
+    }
+
+    function applyBet(n, a, ctx) {
+      if (n.length === 2) applyTwoDigit(n, a, ctx);
+      else applyThreeDigit(n, a, ctx);
+    }
+
+    function applyKeywords(n, pairs, ctx) {
+      var row = { num: n };
+      var m, bad = null;
+      KW_PAIR.lastIndex = 0;
+      while ((m = KW_PAIR.exec(pairs))) {
+        var kw = m[1], amt = toAmount(m[2]), col;
+        if (/^ตรง$/.test(kw)) col = n.length === 3 ? 'trong' : null;
+        else if (/^โต/.test(kw)) col = n.length === 3 ? 'tod' : null;
+        else if (/^บ/.test(kw)) col = n.length === 3 ? 'trong' : 'bon';
+        else col = n.length === 2 ? 'lang' : null;
+        if (!col) { bad = 'เลข ' + n.length + ' หลัก ใช้คำว่า "' + kw + '" ไม่ได้'; break; }
+        if (row[col] != null) { bad = 'ระบุยอดซ้ำในบรรทัดเดียว'; break; }
+        row[col] = amt;
+      }
+      if (bad) return warn(ctx, bad);
+      pushRow(row, ctx);
+    }
+
+    function handleLine(s, ctx) {
+      var m = s.match(KW_LINE);
+      if (m) { flushPending(); return applyKeywords(m[1], m[2], ctx); }
+
+      var eqCount = (s.match(/=/g) || []).length;
+      if (eqCount === 0) {
+        m = s.match(/^(\d{2,3})\*(\d[\d,]*)$/);
+        if (m) {
+          flushPending();
+          if (m[1].length === 2) {
+            var v = toAmount(m[2]);
+            return applyTwoDigit(m[1], [v, v], ctx);
+          }
+          return warn(ctx, 'เลข 3 หลัก*ยอด ที่ไม่มี = ยังไม่มีกติกานี้');
+        }
+        if (NUM_LIST.test(s)) {
+          s.split(/[\s,\/]+/).forEach(function (num) {
+            pending.push({ num: num, lineNo: ctx.lineNo });
+          });
+          return;
+        }
+        flushPending();
+        return warn(ctx, 'ไม่ตรงกติกาไหน');
+      }
+      if (eqCount > 1) { flushPending(); return warn(ctx, 'มีเครื่องหมาย = มากกว่า 1 ตัว'); }
+
+      var parts = s.split('=');
+      var left = parts[0].trim();
+      var right = parts[1].trim().replace(/(\d),(?=\d{3}(\D|$))/g, '$1');
+      if (!/^\d+(\*\d+){0,2}$/.test(right)) {
+        flushPending();
+        return warn(ctx, 'ยอดหลัง = อ่านไม่ออก');
+      }
+      var amounts = right.split('*').map(Number);
+      var nums = [];
+
+      if (left === '') {
+        if (!pending.length) return warn(ctx, 'มียอดแต่ไม่มีเลข');
+        nums = pending.map(function (p) { return p.num; });
+        pending = [];
+      } else if ((m = left.match(/^(\d{3})\*(\d)$/))) {
+        flushPending();
+        if (amounts.length !== 1) return warn(ctx, 'เลข*จำนวน = ควรมียอดเดียว');
+        if (m[2] !== '3' && m[2] !== '6') return warn(ctx, 'ยังไม่มีกติกา เลข*' + m[2] + ' (รองรับ *3 และ *6)');
+        nums = [m[1]];
+        amounts = [amounts[0], Number(m[2])];
+      } else if (NUM_LIST.test(left)) {
+        if (pending.length) {
+          note(ctx, 'รวมเลขจากบรรทัดก่อนหน้า (' + pending.map(function (p) { return p.num; }).join(' ') + ') เข้ากับยอดบรรทัดนี้');
+          nums = pending.map(function (p) { return p.num; });
+          pending = [];
+        }
+        nums = nums.concat(left.split(/[\s,\/]+/));
+      } else {
+        flushPending();
+        if (/^\d+$/.test(left)) return warn(ctx, 'รองรับเฉพาะเลข 2 หลักและ 3 หลัก');
+        return warn(ctx, 'เลขหน้า = อ่านไม่ออก');
+      }
+      nums.forEach(function (n) { applyBet(n, amounts, ctx); });
+    }
+
+    lines.forEach(function (raw, i) {
+      var original = raw.trim();
+      if (!original) return;
+      var ctx = { lineNo: i + 1, text: original };
+      if (SEPARATOR.test(original.replace(/\s/g, ''))) {
+        flushPending();
+        header = null;
+        return;
+      }
+      var s = normalize(original);
+      var h = s.match(HEADER_RE);
+      if (h) {
+        flushPending();
+        var word = h[1];
+        header = (/บ/.test(word) && /ล/.test(word)) ? 'both' : (/^บ/.test(word) ? 'top' : 'bottom');
+        s = s.slice(h[0].length).trim();
+        if (!s) return;
+      }
+      handleLine(s, ctx);
+    });
+    flushPending();
+
+    var totals = { rows: rows.length, bon: 0, lang: 0, tod: 0, trong: 0 };
+    rows.forEach(function (r) {
+      ['bon', 'lang', 'tod', 'trong'].forEach(function (k) { if (r[k] != null) totals[k] += r[k]; });
+    });
+    var hasLeadingZero = rows.some(function (r) { return r.num.charAt(0) === '0'; });
+
+    return { rows: rows, warnings: warnings, notes: notes, totals: totals, hasLeadingZero: hasLeadingZero };
+  }
+
+  function toTSV(rows, prefix, suffix) {
+    var clean = function (list) { return (list || []).map(function (v) { return v == null ? '' : String(v).replace(/[\t\r\n]+/g, ' ').trim(); }); };
+    var lead = clean(prefix), tail = clean(suffix);
+    return rows.map(function (r) {
+      var cells = lead.concat([r.num, r.bon, r.lang, r.tod, r.trong].map(function (v) { return v == null ? '' : String(v); }));
+      if (tail.length) cells = cells.concat(tail);
+      else while (cells.length > lead.length + 1 && cells[cells.length - 1] === '') cells.pop();
+      return cells.join('\t');
+    }).join('\n');
+  }
+
+  var api = { parse: parse, toTSV: toTSV, permutations: permutations, RULES_VERSION: RULES_VERSION };
+  if (typeof module !== 'undefined' && module.exports) module.exports = api;
+  else root.SlipParser = api;
+})(this);
+
+</script>
+<script>
+(function () {
+  var P = window.SlipParser;
+  var CFG = window.SLIP_CONFIG || { mode: 'local', customers: [] };
+  var SAMPLE = [
+    'บน', '50=100x100', '66=200', 'ล่าง', '25*30', 'บล', '93', '39', '= 15', '---',
+    '739 ตรง 10 โต๊ด 20', '394=200x5x50', '508*6=20', '464=100x3', '123*4=20'
+  ].join('\n');
+  var KEY_DRAFT = 'slip-draft-v1';
+  var KEY_CUST = 'slip-customers-v1';
+  var $ = function (id) { return document.getElementById(id); };
+  var slip = $('slip'), dateIn = $('draw-date'), custIn = $('customer'), listEl = $('cust-list');
+  var current = { rows: [] };
+  var lastCleared = '';
+  var timer = null;
+  var fmt = function (n) { return n.toLocaleString('en-US'); };
+  var pad = function (n) { return (n < 10 ? '0' : '') + n; };
+
+  $('ver').textContent = 'กติกาเวอร์ชัน ' + P.RULES_VERSION;
+
+  function store(key, val) {
+    try {
+      if (val === undefined) return localStorage.getItem(key);
+      localStorage.setItem(key, val);
+    } catch (e) { return null; }
+    return null;
+  }
+
+  /* ---------- งวดวันที่ ---------- */
+  function fmtDate(d) { return pad(d.getDate()) + '/' + pad(d.getMonth() + 1) + '/' + d.getFullYear(); }
+  function drawDates() {
+    var now = new Date();
+    var t = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    var all = [];
+    for (var k = -2; k <= 3; k++) {
+      var y = t.getFullYear(), m = t.getMonth() + k;
+      all.push(new Date(y, m, 1), new Date(y, m, 16));
+    }
+    all.sort(function (a, b) { return a - b; });
+    var i = 0;
+    while (i < all.length && all[i] < t) i++;
+    return { prev: all[i - 1], next: all[i], after: all[i + 1] };
+  }
+  function parseDate(s) {
+    var v = String(s || '').trim();
+    var m = v.match(/^(\d{1,2})[\/\-.](\d{1,2})[\/\-.](\d{4})$/) || v.match(/^(\d{2})(\d{2})(\d{4})$/);
+    if (!m) return null;
+    var d = +m[1], mo = +m[2], y = +m[3];
+    if (mo < 1 || mo > 12 || d < 1) return null;
+    var gy = y > 2400 ? y - 543 : y;
+    if (gy < 1900 || gy > 2200) return null;
+    var dim = new Date(gy, mo, 0).getDate();
+    if (d > dim) return null;
+    return pad(d) + '/' + pad(mo) + '/' + y;
+  }
+  var TH_MONTHS = ['ม.ค.', 'ก.พ.', 'มี.ค.', 'เม.ย.', 'พ.ค.', 'มิ.ย.', 'ก.ค.', 'ส.ค.', 'ก.ย.', 'ต.ค.', 'พ.ย.', 'ธ.ค.'];
+  var draws = drawDates();
+  function renderDraws() {
+    var box = $('draws');
+    box.textContent = '';
+    [['งวดก่อน', draws.prev], ['งวดนี้', draws.next], ['งวดหน้า', draws.after]].forEach(function (p) {
+      var val = fmtDate(p[1]);
+      var b = document.createElement('button');
+      b.type = 'button';
+      b.textContent = p[1].getDate() + ' ' + TH_MONTHS[p[1].getMonth()];
+      b.title = p[0] + ' ' + val;
+      b.setAttribute('aria-label', p[0] + ' ' + val);
+      b.setAttribute('aria-pressed', String(dateIn.value === val));
+      b.addEventListener('click', function () {
+        dateIn.value = val;
+        setDateError('');
+        renderDraws();
+        render();
+      });
+      box.appendChild(b);
+    });
+  }
+  function setDateError(msg) {
+    $('date-err').textContent = msg;
+    dateIn.setAttribute('aria-invalid', msg ? 'true' : 'false');
+  }
+  dateIn.addEventListener('input', function (e) {
+    var atEnd = dateIn.selectionStart === dateIn.value.length;
+    if (atEnd && (!e.inputType || e.inputType.indexOf('insert') === 0)) {
+      var digits = dateIn.value.replace(/\D/g, '').slice(0, 8);
+      var out = digits.slice(0, 2);
+      if (digits.length > 2) out += '/' + digits.slice(2, 4);
+      if (digits.length > 4) out += '/' + digits.slice(4);
+      if (/^[\d\/]*$/.test(dateIn.value)) dateIn.value = out;
+    }
+    setDateError('');
+    renderDraws();
+    render();
+  });
+  dateIn.addEventListener('blur', function () {
+    if (!dateIn.value.trim()) return;
+    var ok = parseDate(dateIn.value);
+    if (ok) { dateIn.value = ok; setDateError(''); }
+    else setDateError('วันที่ไม่ถูกต้อง ใช้รูปแบบ DD/MM/YYYY เช่น ' + fmtDate(draws.next));
+    renderDraws();
+    render();
+  });
+
+  /* ---------- รายชื่อลูกค้า ---------- */
+  var customers = [];
+  var custReady = false;
+  var custSource = CFG.mode === 'db' ? 'db' : 'local';
+  var db = null;
+  var activeIndex = -1;
+  var options = [];
+
+  function normName(s) { return String(s || '').replace(/\s+/g, ' ').trim(); }
+  function keyName(s) { return normName(s).toLowerCase(); }
+  function findCustomer(name) {
+    var k = keyName(name);
+    for (var i = 0; i < customers.length; i++) if (keyName(customers[i].name) === k) return customers[i];
+    return null;
+  }
+
+  function loadLocalCustomers() {
+    var saved = { added: [], removed: [] };
+    try { var raw = store(KEY_CUST); if (raw) saved = JSON.parse(raw) || saved; } catch (e) {}
+    var removed = {};
+    (saved.removed || []).forEach(function (n) { removed[keyName(n)] = true; });
+    var list = [];
+    var seen = {};
+    (CFG.customers || []).concat(saved.added || []).forEach(function (n) {
+      var k = keyName(n);
+      if (!k || removed[k] || seen[k]) return;
+      seen[k] = true;
+      list.push({ id: k, name: normName(n) });
+    });
+    customers = list;
+    custReady = true;
+    renderCustomers();
+  }
+  function saveLocalChange(addName, removeName) {
+    var saved = { added: [], removed: [] };
+    try { var raw = store(KEY_CUST); if (raw) saved = JSON.parse(raw) || saved; } catch (e) {}
+    saved.added = saved.added || []; saved.removed = saved.removed || [];
+    if (addName) {
+      saved.removed = saved.removed.filter(function (n) { return keyName(n) !== keyName(addName); });
+      var inBase = (CFG.customers || []).some(function (n) { return keyName(n) === keyName(addName); });
+      if (!inBase) saved.added.push(addName);
+    }
+    if (removeName) {
+      saved.added = saved.added.filter(function (n) { return keyName(n) !== keyName(removeName); });
+      saved.removed.push(removeName);
+    }
+    store(KEY_CUST, JSON.stringify(saved));
+  }
+
+  function addCustomer(name, orderOverride) {
+    var n = normName(name);
+    if (!n) return Promise.reject(new Error('ใส่ชื่อลูกค้าก่อน'));
+    if (n.length > 80) return Promise.reject(new Error('ชื่อยาวเกินไป ไม่เกิน 80 ตัวอักษร'));
+    if (findCustomer(n)) return Promise.reject(new Error('มีชื่อ "' + n + '" อยู่แล้ว'));
+    if (custSource === 'db' && db) {
+      var maxOrder = customers.reduce(function (m, c) { return Math.max(m, c.order || 0); }, 0);
+      return db.collection('customers').add({ name: n, order: orderOverride || maxOrder + 1, addedAt: new Date().toISOString() })
+        .then(function () { return n; }, function (e) {
+          var code = e && e.code;
+          if (code === 'invalid_argument') throw new Error('บัญชีนี้ดูได้อย่างเดียว เพิ่มรายชื่อไม่ได้');
+          if (code === 'quota_exceeded') throw new Error('พื้นที่เก็บรายชื่อเต็ม ลบชื่อที่ไม่ใช้แล้วก่อน');
+          throw new Error('บันทึกไม่สำเร็จ ลองอีกครั้ง');
+        });
+    }
+    saveLocalChange(n, null);
+    customers.push({ id: keyName(n), name: n });
+    renderCustomers();
+    return Promise.resolve(n);
+  }
+  function removeCustomer(c) {
+    if (custSource === 'db' && db) {
+      return db.collection('customers').doc(c.id).delete().catch(function (e) {
+        throw new Error(e && e.code === 'invalid_argument' ? 'บัญชีนี้ดูได้อย่างเดียว ลบรายชื่อไม่ได้' : 'ลบไม่สำเร็จ ลองอีกครั้ง');
+      });
+    }
+    saveLocalChange(null, c.name);
+    customers = customers.filter(function (x) { return x !== c; });
+    renderCustomers();
+    return Promise.resolve();
+  }
+
+  function renderCustomers() {
+    $('cust-count').textContent = custReady ? '(' + customers.length + ')' : '';
+    $('store-hint').textContent = custSource === 'db'
+      ? (db ? 'รายชื่อบันทึกไว้กับหน้าเว็บนี้ เปิดจากเครื่องไหนก็เห็นรายชื่อเดียวกัน' : 'เปิดรายชื่อที่บันทึกไว้ไม่ได้ในตอนนี้ พิมพ์ชื่อลูกค้าในช่องลูกค้าเองได้')
+      : 'รายชื่อเก็บไว้ในเบราว์เซอร์เครื่องนี้ ถ้าใช้หลายเครื่อง ใช้ "นำเข้า / ส่งออกรายชื่อ" ด้านล่างย้ายรายชื่อไปอีกเครื่อง';
+    var ul = $('names-list');
+    ul.textContent = '';
+    var empty = $('names-empty');
+    empty.hidden = customers.length > 0 || !custReady;
+    empty.textContent = 'ยังไม่มีรายชื่อลูกค้า พิมพ์ชื่อในช่องด้านบนแล้วกด "เพิ่มลูกค้า" หรือวางหลายชื่อพร้อมกันใน "นำเข้า / ส่งออกรายชื่อ"';
+    customers.forEach(function (c) {
+      var li = document.createElement('li');
+      var nm = document.createElement('span'); nm.className = 'nm'; nm.textContent = c.name;
+      var del = document.createElement('button');
+      del.type = 'button';
+      del.textContent = '×';
+      del.setAttribute('aria-label', 'ลบ ' + c.name);
+      var t = null;
+      del.addEventListener('click', function () {
+        if (!li.classList.contains('confirm')) {
+          li.classList.add('confirm');
+          del.textContent = 'ลบ?';
+          del.setAttribute('aria-label', 'ยืนยันลบ ' + c.name);
+          t = setTimeout(function () { li.classList.remove('confirm'); del.textContent = '×'; del.setAttribute('aria-label', 'ลบ ' + c.name); }, 3000);
+          return;
+        }
+        clearTimeout(t);
+        del.disabled = true;
+        removeCustomer(c).then(function () { setAddMsg(''); }, function (e) { del.disabled = false; setAddMsg(e.message); });
+      });
+      li.appendChild(nm); li.appendChild(del);
+      ul.appendChild(li);
+    });
+    renderCustState();
+    if (!listEl.hidden) renderOptions();
+  }
+  function setAddMsg(msg) { $('add-err').textContent = msg; }
+
+  $('add-form').addEventListener('submit', function (e) {
+    e.preventDefault();
+    var input = $('new-name');
+    var n = normName(input.value);
+    if (!n) { setAddMsg('ใส่ชื่อลูกค้าก่อน'); input.focus(); return; }
+    addCustomer(n).then(function () { input.value = ''; setAddMsg(''); input.focus(); }, function (err) { setAddMsg(err.message); });
+  });
+  $('new-name').addEventListener('input', function () { setAddMsg(''); });
+
+  /* combobox */
+  function openList() { listEl.hidden = false; custIn.setAttribute('aria-expanded', 'true'); renderOptions(); }
+  function closeList() { listEl.hidden = true; custIn.setAttribute('aria-expanded', 'false'); custIn.removeAttribute('aria-activedescendant'); activeIndex = -1; }
+  function renderOptions() {
+    var q = keyName(custIn.value);
+    var matches = customers.filter(function (c) { return !q || keyName(c.name).indexOf(q) !== -1; });
+    options = matches.map(function (c) { return { type: 'pick', name: c.name }; });
+    if (q && !findCustomer(custIn.value)) options.push({ type: 'add', name: normName(custIn.value) });
+    listEl.textContent = '';
+    if (!custReady) {
+      var li0 = document.createElement('li'); li0.className = 'info'; li0.textContent = 'กำลังโหลดรายชื่อ…'; listEl.appendChild(li0);
+    } else if (!options.length) {
+      var li1 = document.createElement('li'); li1.className = 'info'; li1.textContent = 'ยังไม่มีรายชื่อ พิมพ์ชื่อเพื่อเพิ่มลูกค้าใหม่'; listEl.appendChild(li1);
+    }
+    if (activeIndex >= options.length) activeIndex = options.length - 1;
+    options.forEach(function (o, i) {
+      var li = document.createElement('li');
+      li.id = 'cust-opt-' + i;
+      li.setAttribute('role', 'option');
+      li.setAttribute('aria-selected', String(i === activeIndex));
+      if (o.type === 'add') { li.className = 'add'; li.textContent = '+ เพิ่ม "' + o.name + '" เป็นลูกค้าใหม่'; }
+      else li.textContent = o.name;
+      li.addEventListener('mousedown', function (e) { e.preventDefault(); choose(i); });
+      listEl.appendChild(li);
+    });
+    if (activeIndex >= 0) {
+      custIn.setAttribute('aria-activedescendant', 'cust-opt-' + activeIndex);
+      var act = $('cust-opt-' + activeIndex);
+      if (act && act.scrollIntoView) act.scrollIntoView({ block: 'nearest' });
+    } else custIn.removeAttribute('aria-activedescendant');
+  }
+  function setCustomer(name) {
+    custIn.value = name;
+    $('cust-err').textContent = '';
+    custIn.setAttribute('aria-invalid', 'false');
+    renderCustState();
+    render();
+  }
+  function choose(i) {
+    var o = options[i];
+    if (!o) return;
+    if (o.type === 'add') {
+      addCustomer(o.name).then(function (n) { setCustomer(n); closeList(); }, function (e) { $('cust-err').textContent = e.message; });
+    } else { setCustomer(o.name); closeList(); }
+  }
+  custIn.addEventListener('focus', function () { if (custIn.value) custIn.select(); openList(); });
+  custIn.addEventListener('input', function () {
+    activeIndex = custIn.value ? 0 : -1;
+    $('cust-err').textContent = '';
+    custIn.setAttribute('aria-invalid', 'false');
+    openList();
+    renderCustState();
+    render();
+  });
+  custIn.addEventListener('keydown', function (e) {
+    if (e.key === 'ArrowDown') { e.preventDefault(); if (listEl.hidden) openList(); activeIndex = Math.min(options.length - 1, activeIndex + 1); renderOptions(); }
+    else if (e.key === 'ArrowUp') { e.preventDefault(); activeIndex = Math.max(0, activeIndex - 1); renderOptions(); }
+    else if (e.key === 'Enter') { if (!listEl.hidden && activeIndex >= 0) { e.preventDefault(); choose(activeIndex); } }
+    else if (e.key === 'Escape') { closeList(); }
+  });
+  custIn.addEventListener('blur', function () {
+    setTimeout(closeList, 120);
+    var c = findCustomer(custIn.value);
+    if (c && c.name !== custIn.value) setCustomer(c.name);
+    else if (custIn.value !== normName(custIn.value)) setCustomer(normName(custIn.value));
+  });
+  function renderCustState() {
+    var box = $('cust-state');
+    box.textContent = '';
+    var n = normName(custIn.value);
+    if (!n || !custReady || findCustomer(n)) return;
+    var s = document.createElement('span'); s.textContent = 'ยังไม่อยู่ในรายชื่อ';
+    var b = document.createElement('button'); b.type = 'button'; b.textContent = 'เพิ่มเข้ารายชื่อ';
+    b.addEventListener('click', function () {
+      addCustomer(n).then(function (nm) { setCustomer(nm); }, function (e) { $('cust-err').textContent = e.message; });
+    });
+    box.appendChild(s); box.appendChild(b);
+  }
+
+  /* ---------- ผลลัพธ์ ---------- */
+  function renderAB() {
+    var d = parseDate(dateIn.value), c = normName(custIn.value);
+    var key = (d || '') + '|' + c;
+    if (renderAB.last !== undefined && renderAB.last !== key && $('status').textContent.indexOf('คัดลอก') === 0) setStatus('');
+    renderAB.last = key;
+    var ad = $('ab-date'), ac = $('ab-cust');
+    ad.textContent = d || 'ยังไม่ได้ใส่';
+    ad.className = d ? '' : 'missing';
+    ac.textContent = c || 'ยังไม่ได้เลือก';
+    ac.className = c ? '' : 'missing';
+  }
+  function setStatus(text, opts) {
+    opts = opts || {};
+    var s = $('status');
+    s.textContent = text || '';
+    s.className = opts.bad ? 'bad' : '';
+    if (opts.undo) {
+      var b = document.createElement('button');
+      b.type = 'button';
+      b.textContent = 'เอาข้อความกลับมา';
+      b.addEventListener('click', function () {
+        slip.value = lastCleared;
+        store(KEY_DRAFT, slip.value);
+        render();
+        setStatus('');
+        slip.focus();
+      });
+      s.appendChild(b);
+    }
+  }
+  function cell(text, cls) {
+    var td = document.createElement('td');
+    if (cls) td.className = cls;
+    td.textContent = text == null ? '' : (typeof text === 'number' ? fmt(text) : text);
+    return td;
+  }
+  function fillList(boxId, titleId, listId, items, title) {
+    var box = $(boxId), list = $(listId);
+    list.textContent = '';
+    box.hidden = items.length === 0;
+    if (!items.length) return;
+    $(titleId).textContent = title;
+    items.forEach(function (it) {
+      var li = document.createElement('li');
+      var ln = document.createElement('span'); ln.className = 'ln'; ln.textContent = 'บรรทัด ' + it.lineNo;
+      var src = document.createElement('span'); src.className = 'src'; src.textContent = it.text;
+      var why = document.createElement('span'); why.textContent = it.reason;
+      li.appendChild(ln); li.appendChild(src); li.appendChild(why);
+      list.appendChild(li);
+    });
+  }
+
+  function fmtStamp(t) { return fmtDate(t) + ' ' + pad(t.getHours()) + ':' + pad(t.getMinutes()); }
+  var entryStamp = '';
+  function render() {
+    var text = slip.value;
+    var r = P.parse(text);
+    current = r;
+    entryStamp = fmtStamp(new Date());
+    renderAB();
+    var dVal = parseDate(dateIn.value), cVal = normName(custIn.value);
+    $('sample-chip').hidden = text !== SAMPLE;
+    $('t-rows').textContent = fmt(r.totals.rows);
+    $('t-bon').textContent = fmt(r.totals.bon);
+    $('t-lang').textContent = fmt(r.totals.lang);
+    $('t-tod').textContent = fmt(r.totals.tod);
+    $('t-trong').textContent = fmt(r.totals.trong);
+    $('btn-copy').disabled = r.rows.length === 0;
+    $('zero-box').hidden = !r.hasLeadingZero;
+    $('tsv').hidden = true;
+
+    fillList('warn-box', 'warn-title', 'warn-list', r.warnings, 'ยังไม่ได้แปลง ' + r.warnings.length + ' บรรทัด แถวเหล่านี้ไม่อยู่ในผลลัพธ์');
+    fillList('note-box', 'note-title', 'note-list', r.notes, 'ช่วยตรวจ ' + r.notes.length + ' รายการ');
+
+    var body = $('rows'), foot = $('foot');
+    body.textContent = '';
+    foot.textContent = '';
+    if (!r.rows.length) {
+      var tr0 = document.createElement('tr'); tr0.className = 'empty';
+      var td0 = document.createElement('td'); td0.colSpan = 9;
+      td0.textContent = text.trim() ? 'ยังไม่มีแถวที่แปลงได้ ดูรายการแจ้งเตือนด้านบน' : 'วางข้อความโพยในช่องด้านซ้าย แล้วผลลัพธ์จะขึ้นที่นี่';
+      tr0.appendChild(td0); body.appendChild(tr0);
+      return;
+    }
+    var frag = document.createDocumentFragment();
+    r.rows.forEach(function (row) {
+      var tr = document.createElement('tr');
+      tr.appendChild(cell(String(row.lineNo), 'ref'));
+      tr.appendChild(cell(dVal || '—', 'l meta' + (dVal ? '' : ' missing')));
+      var cc = cell(cVal || '—', 'l meta cust' + (cVal ? '' : ' missing'));
+      if (cVal) cc.title = cVal;
+      tr.appendChild(cc);
+      tr.appendChild(cell(row.num, 'l num'));
+      tr.appendChild(cell(row.bon));
+      tr.appendChild(cell(row.lang));
+      tr.appendChild(cell(row.tod));
+      tr.appendChild(cell(row.trong));
+      tr.appendChild(cell(entryStamp, 'l meta'));
+      frag.appendChild(tr);
+    });
+    body.appendChild(frag);
+    var ft = document.createElement('tr');
+    ft.appendChild(cell('', 'ref'));
+    var sumCell = cell('รวม', 'l');
+    sumCell.colSpan = 3;
+    ft.appendChild(sumCell);
+    ft.appendChild(cell(r.totals.bon || null));
+    ft.appendChild(cell(r.totals.lang || null));
+    ft.appendChild(cell(r.totals.tod || null));
+    ft.appendChild(cell(r.totals.trong || null));
+    ft.appendChild(cell('', 'l'));
+    foot.appendChild(ft);
+  }
+
+  function copied() {
+    setStatus('คัดลอก ' + fmt(current.rows.length) + ' แถวแล้ว วางที่ช่อง A ได้เลย');
+  }
+  function fallbackCopy(tsv) {
+    var ta = $('tsv');
+    ta.value = tsv;
+    ta.hidden = false;
+    ta.focus();
+    ta.select();
+    var ok = false;
+    try { ok = document.execCommand('copy'); } catch (e) { ok = false; }
+    if (ok) { ta.hidden = true; copied(); }
+    else setStatus('เลือกข้อความไว้ให้แล้ว กด Ctrl+C หรือ ⌘C เพื่อคัดลอก');
+  }
+
+  $('btn-copy').addEventListener('click', function () {
+    var d = parseDate(dateIn.value);
+    var c = normName(custIn.value);
+    var bad = false;
+    if (!d) {
+      setDateError(dateIn.value.trim() ? 'วันที่ไม่ถูกต้อง ใช้รูปแบบ DD/MM/YYYY' : 'ใส่งวดวันที่ก่อนคัดลอก');
+      bad = true;
+    }
+    if (!c) {
+      $('cust-err').textContent = 'เลือกลูกค้าก่อนคัดลอก';
+      custIn.setAttribute('aria-invalid', 'true');
+      bad = true;
+    }
+    if (bad) {
+      setStatus('ใส่งวดวันที่และลูกค้าให้ครบก่อน', { bad: true });
+      (d ? custIn : dateIn).focus();
+      return;
+    }
+    dateIn.value = d;
+    render();
+    var tsv = P.toTSV(current.rows, [d, c], [entryStamp]);
+    if (!tsv) return;
+    setStatus('');
+    var settled = false;
+    var guard = setTimeout(function () { if (!settled) { settled = true; fallbackCopy(tsv); } }, 1500);
+    var done = function (ok) {
+      if (settled) return;
+      settled = true;
+      clearTimeout(guard);
+      if (ok) copied(); else fallbackCopy(tsv);
+    };
+    try {
+      navigator.clipboard.writeText(tsv).then(function () { done(true); }, function () { done(false); });
+    } catch (e) {
+      done(false);
+    }
+  });
+  $('btn-sample').addEventListener('click', function () {
+    slip.value = SAMPLE;
+    store(KEY_DRAFT, slip.value);
+    render();
+    setStatus('');
+  });
+  $('btn-clear').addEventListener('click', function () {
+    if (!slip.value) return;
+    lastCleared = slip.value;
+    slip.value = '';
+    store(KEY_DRAFT, '');
+    render();
+    setStatus('ล้างข้อความแล้ว', { undo: true });
+    slip.focus();
+  });
+  slip.addEventListener('input', function () {
+    clearTimeout(timer);
+    timer = setTimeout(function () {
+      store(KEY_DRAFT, slip.value);
+      render();
+      if ($('status').textContent.indexOf('คัดลอก') === 0) setStatus('');
+    }, 120);
+  });
+
+  /* ---------- อ่านรูปโพย ---------- */
+  var PHOTO_RULES = [
+    '- หัวข้อ บน, ล่าง, บล, บน ล่าง ให้เป็นบรรทัดของตัวเองในตำแหน่งเดิม',
+    '- รายการละหนึ่งบรรทัด เขียนแบบ เลข=ยอด และใช้ x แทนเครื่องหมายคูณ เช่น 50=100x100, 66=200, 394=200x5x50, 508x6=20, 25x30',
+    '- ถ้าเลขหลายตัวเขียนเรียงกันแล้วตามด้วยยอดบรรทัดเดียว ให้คงรูปแบบนั้น เช่น 93 แล้ว 39 แล้ว =15',
+    '- ถ้ามีคำว่า ตรง หรือ โต๊ด ต่อท้ายเลข ให้คงไว้ เช่น 739 ตรง 10 โต๊ด 20',
+    '- ถ้าเป็นตารางคอลัมน์ เลข | บน | โต๊ด | ล่าง: เลข 3 หลักที่มีแต่ยอดบน เขียน เลข=ยอด, มียอดโต๊ดด้วย เขียน เลข ตรง ยอดบน โต๊ด ยอดโต๊ด, มีแต่โต๊ด เขียน เลข โต๊ด ยอด; เลข 2 หลักให้เขียน เลข บน ยอด หรือ เลข ล่าง ยอด ตามคอลัมน์ที่มียอด',
+    '- เก็บเลข 0 นำหน้าไว้ เช่น 05, 079',
+    '- ไม่ต้องใส่ชื่อคน วันที่ หัวตาราง ลายเซ็น หรือข้อความอื่นที่ไม่ใช่รายการเลข'
+  ];
+  var PHOTO_PROMPT = [
+    'รูปที่แนบคือโพยหวยไทย อาจเป็นลายมือ ตารางพิมพ์ หรือภาพแชท',
+    'งานของคุณคือถอดรายการเลขออกมาเป็นข้อความตามที่เขียนทุกตัวอักษร ห้ามคำนวณ ห้ามสลับเลข ห้ามแตกเลขกลับ ห้ามรวมยอด',
+    '',
+    'ตอบเป็น JSON อย่างเดียว รูปแบบ {"lines": [string], "skipped": [string], "unclear": [string]}',
+    '',
+    'lines = ข้อความทีละบรรทัดตามลำดับในรูป ถ้ามีหลายคอลัมน์ ให้อ่านคอลัมน์ซ้ายจากบนลงล่างให้จบก่อน แล้วค่อยไปคอลัมน์ถัดไป'
+  ].concat(PHOTO_RULES, [
+    'skipped = แถวที่ถูกขีดทับ ถูกบัง หรืออ่านไม่ออก บอกสั้น ๆ ว่าอยู่ตรงไหน เช่น "แถวถัดจาก 234"',
+    'unclear = ตัวเลขที่อ่านได้แต่ไม่แน่ใจ บอกสั้น ๆ เช่น "30=100x100 เลข 30 อาจเป็น 80"',
+    'ถ้ารูปไม่ใช่โพย ให้ lines เป็น [] และบอกเหตุผลใน skipped'
+  ]).join('\n');
+  var CHAT_PROMPT = [
+    'ถอดรายการเลขจากรูปโพยหวยที่แนบ ตามที่เขียนทุกตัวอักษร ห้ามคำนวณ ห้ามสลับเลข ห้ามแตกเลขกลับ ห้ามรวมยอด',
+    'ตอบเป็น code block เดียว บรรทัดละหนึ่งรายการ ตามลำดับในรูป ถ้ามีหลายคอลัมน์ ให้อ่านคอลัมน์ซ้ายจากบนลงล่างให้จบก่อน แล้วค่อยไปคอลัมน์ถัดไป'
+  ].concat(PHOTO_RULES, [
+    'ใต้ code block บอกสั้น ๆ ว่าข้ามแถวไหน (ถูกขีดทับหรืออ่านไม่ออก) และเลขไหนที่ไม่แน่ใจ'
+  ]).join('\n');
+  var sampleFn = null, imgLimits = null, photoCtl = null, photoFile = null, photoUrl = null, photoTick = null, beforePhoto = '';
+
+  function photoButtons(show) {
+    ['stop', 'retry', 'undo', 'prompt', 'close'].forEach(function (k) { $('photo-' + k).hidden = show.indexOf(k) === -1; });
+  }
+  function photoStatus(text, bad) {
+    var el = $('photo-status');
+    el.textContent = text;
+    el.className = 'photo-status' + (bad ? ' bad' : '');
+  }
+  function photoList(skipped, unclear) {
+    var ul = $('photo-list');
+    ul.textContent = '';
+    unclear.forEach(function (t) { var li = document.createElement('li'); var b = document.createElement('b'); b.textContent = 'ไม่แน่ใจ '; li.appendChild(b); li.appendChild(document.createTextNode(t)); ul.appendChild(li); });
+    skipped.forEach(function (t) { var li = document.createElement('li'); var b = document.createElement('b'); b.textContent = 'ข้าม '; li.appendChild(b); li.appendChild(document.createTextNode(t)); ul.appendChild(li); });
+  }
+  function stopTick() { if (photoTick) { clearInterval(photoTick); photoTick = null; } }
+  var photoState = 'checking';
+  var PHOTO_REASONS = {
+    checking: 'กำลังเชื่อมต่อ Claude เพื่ออ่านรูป รอ 2–3 วินาทีแล้วลองใหม่',
+    'no-claude': 'หน้านี้เชื่อมต่อ Claude ไม่ได้ จึงอ่านรูปไม่ได้ ต้องเปิดจากลิงก์ claude.ai/artifact/… ขณะล็อกอิน Claude อยู่ (ไฟล์ในโฟลเดอร์อ่านรูปไม่ได้)',
+    'no-images': 'ที่ที่เปิดหน้านี้อยู่ส่งรูปให้ Claude ไม่ได้ ลองเปิดลิงก์ในเบราว์เซอร์ Chrome หรือ Edge บนคอม',
+    denied: 'ไม่ได้อนุญาตให้หน้านี้ใช้ Claude กด F5 โหลดหน้าใหม่ แล้วกด "อนุญาต" เมื่อมีหน้าต่างถาม',
+    disabled: 'บัญชี Claude นี้ใช้การอ่านรูปจากหน้าเว็บไม่ได้',
+    chat: 'เว็บนี้อ่านรูปเองไม่ได้ ส่งรูปให้ Claude ในแชทถอดเป็นข้อความ แล้วนำมาวางในช่องโพย'
+  };
+  function setPhotoState(st) {
+    photoState = st;
+    if (st !== 'ready' && st !== 'checking') sampleFn = null;
+  }
+  function showPhotoReason(file) {
+    if (photoCtl) photoCtl.abort();
+    stopTick();
+    $('photo-panel').hidden = false;
+    $('photo-panel').classList.remove('big');
+    if (photoUrl) { try { URL.revokeObjectURL(photoUrl); } catch (e) {} photoUrl = null; }
+    if (file) { photoUrl = URL.createObjectURL(file); $('photo-img').src = photoUrl; }
+    $('photo-thumb').hidden = !file;
+    photoStatus((PHOTO_REASONS[photoState] || PHOTO_REASONS.checking) + (photoState === 'chat' ? '' : ' (รหัส ' + photoState + ')'), photoState !== 'chat');
+    showChatFallback();
+  }
+  function showChatFallback() {
+    var ul = $('photo-list');
+    ul.textContent = '';
+    if (photoState === 'checking') { photoButtons(['close']); return; }
+    var li = document.createElement('li');
+    var b = document.createElement('b'); b.textContent = 'ทางเลือก ';
+    li.appendChild(b);
+    li.appendChild(document.createTextNode('แนบรูปในแชท Claude แล้ววางคำสั่งที่คัดลอกจากปุ่มด้านล่าง จากนั้นคัดลอกข้อความที่ได้มาวางในช่องโพย'));
+    ul.appendChild(li);
+    photoButtons(['prompt', 'close']);
+  }
+  function copyText(text, onOk, onFail) {
+    var settled = false;
+    var finish = function (ok) {
+      if (settled) return;
+      settled = true;
+      clearTimeout(guard);
+      if (ok) { onOk(); return; }
+      var ta = document.createElement('textarea');
+      ta.value = text;
+      ta.setAttribute('readonly', '');
+      ta.style.position = 'absolute'; ta.style.left = '-9999px';
+      document.body.appendChild(ta);
+      ta.select();
+      var done = false;
+      try { done = document.execCommand('copy'); } catch (e) { done = false; }
+      document.body.removeChild(ta);
+      if (done) onOk(); else onFail();
+    };
+    var guard = setTimeout(function () { finish(false); }, 1500);
+    try { navigator.clipboard.writeText(text).then(function () { finish(true); }, function () { finish(false); }); }
+    catch (e) { finish(false); }
+  }
+  function hidePhotoFeature(code) {
+    setPhotoState(code === 'not_granted' ? 'denied' : (code === 'images_unavailable' ? 'no-images' : 'disabled'));
+  }
+  function strList(v) {
+    return Array.isArray(v) ? v.map(function (x) { return String(x == null ? '' : x).trim(); }).filter(Boolean).slice(0, 30) : [];
+  }
+  function readPhoto(file) {
+    if (!file) return;
+    if (photoState !== 'ready' || !sampleFn) { showPhotoReason(file); return; }
+    if (photoCtl) photoCtl.abort();
+    $('photo-thumb').hidden = false;
+    $('photo-panel').hidden = false;
+    $('photo-panel').classList.remove('big');
+    if (photoUrl) { try { URL.revokeObjectURL(photoUrl); } catch (e) {} }
+    photoUrl = URL.createObjectURL(file);
+    $('photo-img').src = photoUrl;
+    photoFile = file;
+    photoList([], []);
+    var types = (imgLimits && imgLimits.mediaTypes) || [];
+    if (types.length && types.indexOf(file.type) === -1) {
+      photoStatus('ไฟล์นี้อ่านไม่ได้ ใช้รูปแบบ JPEG, PNG หรือ WebP', true);
+      photoButtons(['close']);
+      return;
+    }
+    if (imgLimits && imgLimits.maxInputBytes && file.size > imgLimits.maxInputBytes) {
+      photoStatus('รูปใหญ่เกินไป ลองถ่ายใหม่หรือย่อรูปก่อน', true);
+      photoButtons(['close']);
+      return;
+    }
+    var started = Date.now();
+    photoStatus('กำลังอ่านรูป…');
+    stopTick();
+    photoTick = setInterval(function () {
+      photoStatus('กำลังอ่านรูป… ' + Math.round((Date.now() - started) / 1000) + ' วินาที');
+    }, 1000);
+    photoButtons(['stop']);
+    var ctl = new AbortController();
+    photoCtl = ctl;
+    sampleFn.json(PHOTO_PROMPT, { images: file, signal: ctl.signal }).then(function (res) {
+      if (photoCtl !== ctl) return;
+      photoCtl = null;
+      stopTick();
+      if (!res || !Array.isArray(res.lines)) throw { code: 'invalid_json' };
+      var lines = res.lines.slice(0, 600).map(function (x) { return String(x == null ? '' : x).trim(); }).filter(Boolean);
+      var skipped = strList(res.skipped), unclear = strList(res.unclear);
+      photoList(skipped, unclear);
+      if (!lines.length) {
+        photoStatus('ไม่พบรายการเลขในรูปนี้', true);
+        photoButtons(['retry', 'close']);
+        return;
+      }
+      beforePhoto = slip.value;
+      slip.value = lines.join('\n');
+      store(KEY_DRAFT, slip.value);
+      render();
+      setStatus('');
+      photoStatus('อ่านจากรูปแล้ว ' + lines.length + ' บรรทัด ตรวจกับรูปก่อนคัดลอก (แตะรูปเพื่อขยาย)');
+      photoButtons(beforePhoto.trim() && beforePhoto !== SAMPLE ? ['undo', 'close'] : ['close']);
+    }).catch(function (e) {
+      if (photoCtl !== ctl) return;
+      photoCtl = null;
+      stopTick();
+      var code = e && e.code;
+      if (code === 'cancelled') { photoStatus('หยุดอ่านรูปแล้ว'); photoButtons(['retry', 'close']); return; }
+      if (['not_granted', 'sampling_disabled', 'not_declared', 'capability_disabled', 'capability_removed', 'images_unavailable'].indexOf(code) !== -1) {
+        hidePhotoFeature(code);
+        photoStatus((PHOTO_REASONS[photoState] || PHOTO_REASONS.disabled) + ' (รหัส ' + code + ')', true);
+        showChatFallback();
+        return;
+      }
+      var msg = {
+        rate_limited: 'ใช้งานถี่เกินไป หรือโควตา Claude หมดชั่วคราว ลองใหม่ภายหลัง',
+        session_expired: 'ต้องล็อกอิน Claude ใหม่ก่อน แล้วลองอีกครั้ง',
+        image_rejected: 'ไฟล์รูปนี้ใช้ไม่ได้ ลองรูปอื่น',
+        refused: 'Claude ไม่อ่านรูปนี้ ลองรูปอื่น'
+      }[code] || 'อ่านรูปไม่สำเร็จ ลองอีกครั้ง';
+      photoStatus(msg, true);
+      photoButtons(code === 'image_rejected' || code === 'refused' ? ['close'] : ['retry', 'close']);
+    });
+  }
+  function initPhoto() {
+    if (CFG.mode !== 'db') {
+      setPhotoState('chat');
+      $('btn-photo').hidden = true;
+      $('photo-hint').textContent = 'มีรูปโพย ส่งรูปให้ Claude ในแชทถอดเป็นข้อความ แล้วนำมาวางที่นี่';
+      return;
+    }
+    if (!(window.claude && typeof window.claude.use === 'function')) { setPhotoState('no-claude'); return; }
+    window.claude.use('sample').then(function (s) {
+      if (!s) { setPhotoState('no-claude'); return; }
+      sampleFn = s;
+      if (typeof s.limits !== 'function') { setPhotoState('ready'); return; }
+      return s.limits().then(function (lim) {
+        if (!lim || !lim.images) { setPhotoState('no-images'); return; }
+        imgLimits = lim.images;
+        if (imgLimits.mediaTypes && imgLimits.mediaTypes.length) $('photo-input').accept = imgLimits.mediaTypes.join(',');
+        setPhotoState('ready');
+      }, function () { setPhotoState('no-images'); });
+    }).catch(function () { setPhotoState('no-claude'); });
+  }
+  function imageFrom(list) {
+    if (!list) return null;
+    for (var i = 0; i < list.length; i++) if (list[i] && /^image\//.test(list[i].type)) return list[i];
+    return null;
+  }
+  function imageFromData(dt) {
+    if (!dt) return null;
+    var f = imageFrom(dt.files);
+    if (f) return f;
+    var items = dt.items || [];
+    for (var i = 0; i < items.length; i++) {
+      if (items[i] && items[i].kind === 'file' && /^image\//.test(items[i].type)) {
+        var got = items[i].getAsFile && items[i].getAsFile();
+        if (got) return got;
+      }
+    }
+    return null;
+  }
+  $('btn-photo').addEventListener('click', function () {
+    if (photoState !== 'ready') { showPhotoReason(null); return; }
+    $('photo-input').value = '';
+    $('photo-input').click();
+  });
+  $('photo-input').addEventListener('change', function () { var f = imageFrom(this.files); if (f) readPhoto(f); });
+  $('photo-stop').addEventListener('click', function () { if (photoCtl) photoCtl.abort(); });
+  $('photo-prompt').addEventListener('click', function () {
+    copyText(CHAT_PROMPT, function () {
+      photoStatus('คัดลอกคำสั่งแล้ว ไปที่แชท Claude แนบรูปโพย วางคำสั่ง (Ctrl+V) แล้วส่ง จากนั้นคัดลอกข้อความในกรอบโค้ดมาวางในช่องโพย');
+    }, function () {
+      var ta = $('tsv');
+      ta.value = CHAT_PROMPT;
+      ta.hidden = false;
+      ta.focus();
+      ta.select();
+      photoStatus('เลือกคำสั่งไว้ให้แล้วในกล่องฝั่งผลลัพธ์ กด Ctrl+C เพื่อคัดลอก', true);
+    });
+  });
+  $('photo-retry').addEventListener('click', function () { readPhoto(photoFile); });
+  $('photo-undo').addEventListener('click', function () {
+    slip.value = beforePhoto;
+    store(KEY_DRAFT, slip.value);
+    render();
+    photoStatus('เอาข้อความเดิมกลับมาแล้ว');
+    photoButtons(['close']);
+  });
+  $('photo-close').addEventListener('click', function () {
+    if (photoCtl) photoCtl.abort();
+    $('photo-panel').hidden = true;
+    if (photoUrl) { try { URL.revokeObjectURL(photoUrl); } catch (e) {} photoUrl = null; }
+  });
+  $('photo-thumb').addEventListener('click', function () { $('photo-panel').classList.toggle('big'); });
+  document.addEventListener('paste', function (e) {
+    var f = imageFromData(e.clipboardData);
+    if (f) { e.preventDefault(); readPhoto(f); }
+  });
+  document.addEventListener('dragover', function (e) {
+    if (!e.dataTransfer || Array.prototype.indexOf.call(e.dataTransfer.types || [], 'Files') === -1) return;
+    e.preventDefault();
+    slip.classList.add('drop');
+  });
+  document.addEventListener('dragleave', function (e) { if (!e.relatedTarget) slip.classList.remove('drop'); });
+  document.addEventListener('drop', function (e) {
+    slip.classList.remove('drop');
+    var f = imageFromData(e.dataTransfer);
+    if (f) { e.preventDefault(); readPhoto(f); }
+    else if (e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files.length) e.preventDefault();
+  });
+
+  /* ---------- นำเข้า / ส่งออกรายชื่อ ---------- */
+  function ioMsg(text, bad) {
+    var el = $('io-msg');
+    el.textContent = text;
+    el.className = 'hint' + (bad ? ' bad' : '');
+  }
+  $('btn-import').addEventListener('click', function () {
+    var btn = this;
+    var lines = $('import-text').value.split(/\r?\n/).map(normName).filter(Boolean);
+    if (!lines.length) { ioMsg('วางรายชื่อในช่องก่อน บรรทัดละหนึ่งชื่อ', true); return; }
+    var seen = {}, skipped = 0;
+    var queue = lines.filter(function (n) {
+      var k = keyName(n);
+      if (seen[k] || findCustomer(n)) { skipped++; return false; }
+      seen[k] = true;
+      return true;
+    });
+    var base = customers.reduce(function (m, c) { return Math.max(m, c.order || 0); }, 0);
+    var added = 0, failed = 0, lastErr = '';
+    btn.disabled = true;
+    ioMsg('กำลังนำเข้า…');
+    (function next(i) {
+      if (i >= queue.length) {
+        btn.disabled = false;
+        var msg = 'นำเข้า ' + added + ' ชื่อ' + (skipped ? ' ข้าม ' + skipped + ' ชื่อที่มีอยู่แล้ว' : '') + (failed ? ' ไม่สำเร็จ ' + failed + ' ชื่อ: ' + lastErr : '');
+        ioMsg(msg, failed > 0);
+        if (added && !failed) $('import-text').value = '';
+        return;
+      }
+      addCustomer(queue[i], base + i + 1).then(function () { added++; next(i + 1); }, function (e) { failed++; lastErr = e.message; next(i + 1); });
+    })(0);
+  });
+  $('btn-export').addEventListener('click', function () {
+    if (!customers.length) { ioMsg('ยังไม่มีรายชื่อให้คัดลอก', true); return; }
+    var text = customers.map(function (c) { return c.name; }).join('\n');
+    copyText(text, function () {
+      ioMsg('คัดลอก ' + customers.length + ' ชื่อแล้ว นำไปวางในช่องนี้ที่เครื่องอื่น แล้วกด "นำเข้ารายชื่อ"');
+    }, function () {
+      var ta = $('import-text');
+      ta.value = text;
+      ta.focus();
+      ta.select();
+      ioMsg('เลือกรายชื่อไว้ให้แล้วในช่องด้านบน กด Ctrl+C เพื่อคัดลอก', true);
+    });
+  });
+
+  /* ---------- เริ่มต้น ---------- */
+  var draft = store(KEY_DRAFT);
+  slip.value = draft && draft.trim() ? draft : SAMPLE;
+  dateIn.value = fmtDate(draws.next);
+  renderDraws();
+  render();
+
+  initPhoto();
+  if (custSource === 'db') {
+    renderCustomers();
+    var use = window.claude && window.claude.use;
+    if (!use) { custReady = true; renderCustomers(); }
+    else {
+      window.claude.use('db').then(function (d) {
+        db = d;
+        if (!db) { custReady = true; renderCustomers(); return; }
+        db.collection('customers').orderBy('order').onSnapshot(function (snap) {
+          customers = snap.docs.map(function (doc) {
+            var v = doc.data() || {};
+            return { id: doc.id, name: normName(v.name), order: typeof v.order === 'number' ? v.order : 0 };
+          }).filter(function (c) { return c.name; });
+          custReady = true;
+          renderCustomers();
+        }, function () {
+          db = null;
+          custReady = true;
+          renderCustomers();
+        });
+      }, function () { custReady = true; renderCustomers(); });
+    }
+  } else {
+    loadLocalCustomers();
+  }
+})();
+</script>
+
+</body>
+</html>
